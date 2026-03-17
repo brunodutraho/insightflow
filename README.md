@@ -10,7 +10,7 @@ This project simulates a real-world data environment by combining data engineeri
 
 ## 📊 Overview
 
-InsightFlow collects, processes, and analyzes marketing data from different sources, enabling businesses and marketing professionals to:
+InsightFlow enables marketing professionals and businesses to:
 
 * Track campaign performance
 * Analyze engagement and growth metrics
@@ -26,24 +26,23 @@ InsightFlow collects, processes, and analyzes marketing data from different sour
 * Data processing pipelines (Python + Pandas)
 * Analytical database modeling (PostgreSQL)
 * Interactive dashboards
-* Business metrics and KPIs
 
 ---
 
 ## 🏗️ Architecture
 
-```
+```text
 APIs (Instagram, Facebook, Ads)
         ↓
 Data Collection (Python)
         ↓
 Data Processing (Pandas)
         ↓
-PostgreSQL (Data Storage)
+PostgreSQL (Database)
         ↓
 FastAPI (Backend API)
         ↓
-Next.js (Frontend Dashboard)
+Next.js (Frontend)
 ```
 
 ---
@@ -60,8 +59,7 @@ Next.js (Frontend Dashboard)
 ### Data
 
 * Pandas
-* Data Pipelines
-* ETL Processes
+* ETL Pipelines
 
 ### Frontend
 
@@ -78,14 +76,13 @@ Next.js (Frontend Dashboard)
 
 ## 📁 Project Structure
 
-```
+```text
 insightflow/
 │
-├── backend/
-├── frontend/
-├── data_pipeline/
-├── infrastructure/
-├── docs/
+├── backend/       # FastAPI application
+├── frontend/      # Next.js application
+├── docker/        # Docker and docker-compose configs
+├── docs/          # Project documentation
 └── README.md
 ```
 
@@ -93,21 +90,16 @@ insightflow/
 
 ## 🚀 Getting Started
 
-### 1. Clone the repository
+### Clone the repository
 
-```
+```bash
 git clone https://github.com/brunodutraho/insightflow.git
-```
-
-### 2. Navigate to the project
-
-```
 cd insightflow
 ```
 
-### 3. Start the environment (coming soon)
+### Run with Docker (coming soon)
 
-```
+```bash
 docker-compose up
 ```
 
@@ -120,32 +112,32 @@ docker-compose up
 * [ ] User authentication
 * [ ] Client management
 * [ ] Instagram API integration
-* [ ] Basic dashboard
+* [ ] Basic analytics dashboard
 
 ### Next Steps
 
 * [ ] Facebook Ads integration
 * [ ] Advanced analytics
-* [ ] Automation and notifications
+* [ ] Automation (email/WhatsApp)
 * [ ] Machine learning insights
 
 ---
 
 ## 🎯 Project Goals
 
-This project aims to demonstrate:
+This project demonstrates:
 
-* Data engineering skills
-* Analytical thinking
-* Backend development
-* Data modeling (OLTP + OLAP)
-* Business-oriented dashboards
+* Data engineering concepts
+* Backend development with FastAPI
+* Data modeling (OLTP + Analytics)
+* Business-oriented data analysis
+* Dashboard development
 
 ---
 
 ## 📌 Status
 
-🚧 In development (MVP phase)
+🚧 MVP in development
 
 ---
 
