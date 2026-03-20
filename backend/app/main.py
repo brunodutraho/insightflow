@@ -1,14 +1,19 @@
 from fastapi import FastAPI
-from app.routers import health
+from contextlib import asynccontextmanager
+from app.database.init_db import init_db
 
-app = FastAPI(
-    title="InsightFlow API",
-    version="1.0.0",
-    description="Marketing Analytics SaaS API"
-)
 
-app.include_router(health.router, prefix="/api")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    # startup
+    init_db()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 @app.get("/")
 def root():
-    return {"message": "InsightFlow API is running!"}
+    return {"message": "API running"}
