@@ -21,6 +21,9 @@ def login_user(db: Session, email: str, password: str):
     if not user:
         return None
 
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token({
+        "sub": str(user.id),
+        "role": user.role.value
+    })
 
     return token

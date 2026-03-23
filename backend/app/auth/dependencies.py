@@ -11,15 +11,33 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(
             token,
-            "super-secret-key",  # depois centralizamos isso
+            "super-secret-key",
             algorithms=["HS256"]
         )
-        user_id: str = payload.get("sub")
+
+        user_id = payload.get("sub")
+        role = payload.get("role")
 
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        return user_id
+        return {
+            "user_id": user_id,
+            "role": role
+        }
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+#   Permissions control
+def require_roles(allowed_roles: list[str]):
+    def role_checker(user = Depends(get_current_user)):
+        if user["role"] not in allowed_roles:
+            raise HTTPException(
+                status_code=403,
+                detail="Not enough permissions"
+            )
+        return user
+
+    return role_checker
