@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
-    name: str
     email: EmailStr
 
 
@@ -12,6 +11,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    role: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -3,20 +3,32 @@ from app.auth.dependencies import get_current_user, require_roles
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
-# Any authenticated user
+# Qualquer usuário autenticado
 @router.get("/me")
-def get_me(user = Depends(get_current_user)):
-    return user
+def get_me(user: dict = Depends(get_current_user)):
+    return {
+        "id": user["user_id"], 
+        "role": user["role"] 
+    }
 
-
-# Admin only
+# Apenas Admin
 @router.get("/admin")
-def admin_route(user = Depends(require_roles(["admin"]))):
-    return {"message": "Admin access"}
+def admin_route(user: dict = Depends(require_roles(["admin"]))):
+    return {
+        "message": "Admin access granted",
+        "user": {
+            "id": user["user_id"],
+            "role": user["role"]
+        }
+    }
 
-
-# Admin + Manager
+# Admin + Gestor
 @router.get("/dashboard")
-def dashboard(user = Depends(require_roles(["admin", "gestor"]))):
-    return {"message": "Dashboard access"}
+def dashboard(user: dict = Depends(require_roles(["admin", "gestor"]))):
+    return {
+        "message": "Dashboard access granted",
+        "user": {
+            "id": user["user_id"],
+            "role": user["role"]
+        }
+    }

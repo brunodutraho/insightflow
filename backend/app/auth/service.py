@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
-from .utils import verify_password, create_access_token
+from app.models.user import User, UserRole
+from .utils import verify_password, create_access_token, hash_password
 
 
 def authenticate_user(db: Session, email: str, password: str):
@@ -27,3 +27,22 @@ def login_user(db: Session, email: str, password: str):
     })
 
     return token
+
+
+def register_user(db: Session, email: str, password: str):
+    
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        return None
+
+    new_user = User(
+        email=email,
+        password=hash_password(password),
+        role=UserRole.cliente
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
