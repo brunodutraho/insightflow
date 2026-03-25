@@ -10,26 +10,31 @@ from app.auth.dependencies import get_current_user
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
-# 🔹 CREATE CLIENT (com limite de plano)
+# 🔹 CREATE CLIENT (with plan limit)
 @router.post("/", response_model=ClientResponse)
 def create_client(
     client_data: ClientCreate,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
+    # Extracts the ID from the dictionary correctly
+    user_id = int(current_user["user_id"])
+
     # 🔎 busca assinatura
     subscription = (
         db.query(Subscription)
-        .filter(Subscription.user_id == current_user.id)
+        .filter(Subscription.user_id == user_id)
         .first()
     )
 
-    if not subscription or not subscription.is_active:
-        raise HTTPException(status_code=403, detail="No active subscription")
+    if not subscription:
+        subscription = Subscription(user_id=user_id, plan="free", max_clients=1, is_active=True)
+        db.add(subscription)
+        db.commit()
 
     total_clients = (
         db.query(Client)
-        .filter(Client.owner_id == current_user.id)
+        .filter(Client.owner_id == user_id)
         .count()
     )
 
@@ -41,7 +46,7 @@ def create_client(
 
     new_client = Client(
         name=client_data.name,
-        owner_id=current_user.id
+        owner_id=user_id
     )
 
     db.add(new_client)
