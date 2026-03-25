@@ -11,9 +11,8 @@ from app.middlewares.logging_middleware import LoggingMiddleware
 from app.middlewares.error_middleware import ErrorMiddleware
 
 from app.core.logging_config import setup_logging
-
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.routers.analytics_routes import router as analytics_routes
 
 # configuration log (before anything else)
 setup_logging()
@@ -36,7 +35,7 @@ app.add_middleware(LoggingMiddleware)
 # CORS (basic production-ready)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # then restrict
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,7 +46,7 @@ app.add_middleware(
 app.include_router(auth_router)     # Auth
 app.include_router(user_router)     # Users
 app.include_router(health_router)   # Health
-
+app.include_router(analytics_routes)
 
 @app.get("/")
 def root():
