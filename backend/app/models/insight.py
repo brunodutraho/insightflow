@@ -14,4 +14,7 @@ class Insight(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="insights")
 
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    client = relationship("Client", back_populates="insights")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())

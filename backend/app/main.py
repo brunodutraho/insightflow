@@ -13,6 +13,7 @@ from app.middlewares.error_middleware import ErrorMiddleware
 from app.core.logging_config import setup_logging
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.analytics_routes import router as analytics_routes
+from app.routers import insight_routes
 
 # configuration log (before anything else)
 setup_logging()
@@ -47,6 +48,7 @@ app.include_router(auth_router)     # Auth
 app.include_router(user_router)     # Users
 app.include_router(health_router)   # Health
 app.include_router(analytics_routes)
+app.include_router(insight_routes.router)
 
 @app.get("/")
 def root():

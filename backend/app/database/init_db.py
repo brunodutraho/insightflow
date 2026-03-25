@@ -1,8 +1,8 @@
 from app.database.base import Base
 from app.database.database import engine
 
-# Import all models here
-from app.models.user import User  # IMPORTANT
+from app.models import user, insight, client, subscription
+
 
 
 def init_db():
