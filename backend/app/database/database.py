@@ -4,13 +4,14 @@ from app.config.settings import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args={"options": "-c client_encoding=utf8"}
+    pool_pre_ping=True
 )
 
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine
+    bind=engine,
+    expire_on_commit=False
 )
 
 def get_db():
