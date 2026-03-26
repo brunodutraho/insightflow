@@ -1,0 +1,20 @@
+from sqlalchemy import Column, Integer, Float, String, Date, ForeignKey
+from app.database.base import Base
+
+
+class MarketingMetric(Base):
+    __tablename__ = "marketing_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+
+    platform = Column(String, nullable=False)  # google, meta, tiktok, linkedin
+
+    impressions = Column(Integer, default=0)
+    clicks = Column(Integer, default=0)
+    spend = Column(Float, default=0)
+
+    conversions = Column(Integer, default=0)
+
+    date = Column(Date, nullable=False)

@@ -3,15 +3,15 @@ from datetime import date
 import random
 
 
-class MetaAdsIntegration(BaseIntegration):
+class LinkedInIntegration(BaseIntegration):
 
     def fetch_data(self):
         return [
             {
-                "impressions": random.randint(1500, 6000),
-                "clicks": random.randint(60, 250),
-                "spend": round(random.uniform(80, 400), 2),
-                "conversions": random.randint(5, 30),
+                "impressions": random.randint(800, 4000),
+                "clicks": random.randint(30, 180),
+                "spend": round(random.uniform(100, 500), 2),
+                "conversions": random.randint(2, 15),
                 "date": date.today()
             }
         ]
@@ -21,7 +21,7 @@ class MetaAdsIntegration(BaseIntegration):
 
         for r in raw_data:
             result.append({
-                "platform": "meta",
+                "platform": "linkedin",
                 **r
             })
 

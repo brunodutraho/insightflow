@@ -3,15 +3,16 @@ from datetime import date
 import random
 
 
-class MetaAdsIntegration(BaseIntegration):
+class GoogleAdsIntegration(BaseIntegration):
 
     def fetch_data(self):
+        # 🔥 dados fake simulando API
         return [
             {
-                "impressions": random.randint(1500, 6000),
-                "clicks": random.randint(60, 250),
-                "spend": round(random.uniform(80, 400), 2),
-                "conversions": random.randint(5, 30),
+                "impressions": random.randint(1000, 5000),
+                "clicks": random.randint(50, 200),
+                "spend": round(random.uniform(50, 300), 2),
+                "conversions": random.randint(1, 20),
                 "date": date.today()
             }
         ]
@@ -21,7 +22,7 @@ class MetaAdsIntegration(BaseIntegration):
 
         for r in raw_data:
             result.append({
-                "platform": "meta",
+                "platform": "google",
                 **r
             })
 
