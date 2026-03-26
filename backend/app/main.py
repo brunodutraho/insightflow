@@ -17,26 +17,32 @@ from app.routers.analytics_routes import router as analytics_routes
 from app.routers import insight_routes
 from app.routers.ad_account_routes import router as ad_account_routes
 from app.routers.client_routes import router as client_router
+from app.routers.kpi_routes import router as kpi_routes
+from app.routers.score_routes import router as score_routes
+from app.routers.dashboard_routes import router as dashboard_routes
 
-# configuration log (before anything else)
+from app.services.scheduler import start_scheduler
+
+
+# 🔥 logging
 setup_logging()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup
     init_db()
+    start_scheduler() 
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 
 
-# Middlewares (correct order)
+# Middlewares
 app.add_middleware(ErrorMiddleware)
 app.add_middleware(LoggingMiddleware)
 
-# CORS (basic production-ready)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -47,13 +53,17 @@ app.add_middleware(
 
 
 # Routers
-app.include_router(auth_router)     # Auth
-app.include_router(user_router)     # Users
-app.include_router(health_router)   # Health
+app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(health_router)
 app.include_router(analytics_routes)
 app.include_router(insight_routes.router)
 app.include_router(client_router)
 app.include_router(ad_account_routes)
+app.include_router(kpi_routes)
+app.include_router(score_routes)
+app.include_router(dashboard_routes)
+
 
 @app.get("/")
 def root():
