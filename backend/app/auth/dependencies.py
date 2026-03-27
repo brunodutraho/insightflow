@@ -50,23 +50,24 @@ def require_roles(allowed_roles: list[str]):
 
 
 # Global Customer Validation
-def validate_client_access(
-    client_id: int,
-    user: User,
-    db: Session
-):
-    client = db.query(Client).filter(Client.id == client_id).first()
+# backend\app\auth\dependencies.py
 
+# No backend\app\auth\dependencies.py -> validate_client_access
+def validate_client_access(client_id: int, user: User, db: Session):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    if user.role == "admin":
+    # Use .value se a sua role for um Enum, ou apenas compare a string
+    user_role = user.role.value if hasattr(user.role, "value") else user.role
+
+    if user_role == "admin":
         return client
 
-    if user.role == "manager" and client.owner_id == user.id:
+    if user_role == "gestor" and client.owner_id == user.id:
         return client
 
-    if user.role == "client" and client.id == user.id:
-        return client
-
+    # Se nada bater, 403
     raise HTTPException(status_code=403, detail="Access denied")
+

@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.social_metric import SocialMetric
 
-
 def get_latest_social_metrics(db: Session, client_id: int):
     social = (
         db.query(SocialMetric)
@@ -15,7 +14,7 @@ def get_latest_social_metrics(db: Session, client_id: int):
 
     return {
         "followers": social.followers,
-        "engagement": social.engagement,
+        "engagement": social.engagement_rate, # <--- Usando o nome do banco
         "posts": social.posts,
-        "growth_rate": social.growth_rate
+        "growth_rate": getattr(social, "growth_rate", 0) # Evita erro se não existir
     }
