@@ -1,15 +1,19 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
 });
 
-// Este interceptor anexa o token em TODA requisição automaticamente
+// interceptor global
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // Onde vamos salvar o token
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
+
   return config;
 });
 

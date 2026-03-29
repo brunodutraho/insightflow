@@ -7,14 +7,10 @@ export const metadata: Metadata = {
   description: "Marketing Analytics SaaS",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="pt">
+      <body className="bg-slate-950 text-white">
         <Providers>{children}</Providers>
       </body>
     </html>
