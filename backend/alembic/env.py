@@ -3,11 +3,12 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# 🔥 importa seu settings (.env)
+# importa seu settings (.env)
 from app.config.settings import settings
 
-# 🔥 importa Base
+# importa Base
 from app.database.base import Base
+from app.models import *  
 
 from app.models import user, client, ad_metric, insight, social_metric, subscription, marketing_metric, communication_metric
 
@@ -17,14 +18,14 @@ from app.models import user, client, ad_metric, insight, social_metric, subscrip
 
 config = context.config
 
-# 🔥 usa DATABASE_URL do .env
+# usa DATABASE_URL do .env
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 🔥 metadata dos models
+# metadata dos models
 target_metadata = Base.metadata
 
 

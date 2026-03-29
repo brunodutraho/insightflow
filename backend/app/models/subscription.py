@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 
@@ -13,3 +14,6 @@ class Subscription(Base):
     max_clients = Column(Integer, default=1)
 
     is_active = Column(Boolean, default=True)
+
+    # RELACIONAMENTO
+    user = relationship("User")

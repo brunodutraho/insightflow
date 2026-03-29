@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database.base import Base
@@ -15,4 +14,9 @@ class AdAccount(Base):
     account_id = Column(String, nullable=False)
     access_token = Column(String, nullable=False)
 
-    client = relationship("Client")
+    # RELACIONAMENTO CORRIGIDO (SEM WARNING)
+    client = relationship(
+        "Client",
+        back_populates="ad_accounts",
+        overlaps="ad_accounts"
+    )

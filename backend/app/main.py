@@ -20,11 +20,13 @@ from app.routers.client_routes import router as client_router
 from app.routers.kpi_routes import router as kpi_routes
 from app.routers.score_routes import router as score_routes
 from app.routers.dashboard_routes import router as dashboard_routes
+from app.routers.admin_routes import router as admin_router
+
 
 from app.services.scheduler import start_scheduler
 
 
-# 🔥 logging
+# logging
 setup_logging()
 
 
@@ -63,6 +65,7 @@ app.include_router(ad_account_routes)
 app.include_router(kpi_routes)
 app.include_router(score_routes)
 app.include_router(dashboard_routes)
+app.include_router(admin_router)
 
 
 @app.get("/")

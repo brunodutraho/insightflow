@@ -2,6 +2,7 @@ from app.database.database import SessionLocal
 
 from app.models.marketing_metric import MarketingMetric
 from app.models.communication_metric import CommunicationMetric
+from app.models.client import Client  # 🔥 IMPORTANTE
 
 from app.services.integrations.google_ads import GoogleAdsIntegration
 from app.services.integrations.tiktok_ads import TikTokIntegration
@@ -14,6 +15,13 @@ def run_collector():
     db = SessionLocal()
 
     try:
+        # 🔥 BUSCA TODOS OS CLIENTES (MULTI-TENANT REAL)
+        clients = db.query(Client).all()
+
+        if not clients:
+            print("⚠️ Nenhum cliente encontrado. Pulando coleta.")
+            return
+
         integrations = [
             GoogleAdsIntegration(),
             TikTokIntegration(),
@@ -21,41 +29,49 @@ def run_collector():
             LinkedInIntegration()
         ]
 
-        # coleta ads
-        for integration in integrations:
-            raw = integration.fetch_data()
-            data = integration.transform(raw)
+        # 🔥 LOOP POR CLIENTE
+        for client in clients:
+            client_id = client.id
 
-            for d in data:
-                metric = MarketingMetric(
-                    client_id=1,
-                    platform=d["platform"],
-                    impressions=d["impressions"],
-                    clicks=d["clicks"],
-                    spend=d["spend"],
-                    conversions=d["conversions"],
-                    date=d["date"]
+            # =========================
+            # 📊 MARKETING METRICS
+            # =========================
+            for integration in integrations:
+                raw = integration.fetch_data()
+                data = integration.transform(raw)
+
+                for d in data:
+                    metric = MarketingMetric(
+                        client_id=client_id,
+                        platform=d["platform"],
+                        impressions=d["impressions"],
+                        clicks=d["clicks"],
+                        spend=d["spend"],
+                        conversions=d["conversions"],
+                        date=d["date"]
+                    )
+
+                    db.add(metric)
+
+            # =========================
+            # 📣 COMMUNICATION METRICS
+            # =========================
+            comm_data = generate_communication_data()
+
+            for c in comm_data:
+                metric = CommunicationMetric(
+                    client_id=client_id,
+                    channel=c["channel"],
+                    sent=c["sent"],
+                    opened=c["opened"],
+                    clicked=c["clicked"],
+                    date=c["date"]
                 )
 
                 db.add(metric)
 
-        # comunicação (email / whatsapp)
-        comm_data = generate_communication_data()
-
-        for c in comm_data:
-            metric = CommunicationMetric(
-                client_id=1,
-                channel=c["channel"],
-                sent=c["sent"],
-                opened=c["opened"],
-                clicked=c["clicked"],
-                date=c["date"]
-            )
-
-            db.add(metric)
-
         db.commit()
-        print("✅ Data collection completed")
+        print("✅ Data collection completed (multi-client)")
 
     except Exception as e:
         db.rollback()

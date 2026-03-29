@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, Float, String, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 
@@ -9,7 +10,7 @@ class MarketingMetric(Base):
 
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
 
-    platform = Column(String, nullable=False)  # google, meta, tiktok, linkedin
+    platform = Column(String, nullable=False)
 
     impressions = Column(Integer, default=0)
     clicks = Column(Integer, default=0)
@@ -18,3 +19,6 @@ class MarketingMetric(Base):
     conversions = Column(Integer, default=0)
 
     date = Column(Date, nullable=False)
+
+    # RELACIONAMENTO
+    client = relationship("Client")

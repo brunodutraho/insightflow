@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 
@@ -7,7 +8,7 @@ class CommunicationMetric(Base):
 
     id = Column(Integer, primary_key=True)
 
-    client_id = Column(Integer, ForeignKey("clients.id"))
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
 
     channel = Column(String)  # email, whatsapp
 
@@ -16,3 +17,6 @@ class CommunicationMetric(Base):
     clicked = Column(Integer, default=0)
 
     date = Column(Date)
+
+    # RELACIONAMENTO SÊNIOR
+    client = relationship("Client")

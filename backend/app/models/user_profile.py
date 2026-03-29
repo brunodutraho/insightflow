@@ -1,0 +1,22 @@
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+from app.database.base import Base
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    name = Column(String, nullable=True)
+
+    phone = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    agency_name = Column(String, nullable=True)
+    company_size = Column(String, nullable=True)
+    source = Column(String, nullable=True)
+
+    user = relationship("User", back_populates="profile")

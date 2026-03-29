@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+# backend/app/routers/dashboard_routes.py
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
 
 from app.database.database import get_db
-from app.auth.dependencies import get_current_user, validate_client_access
+from app.auth.dependencies import get_current_user, validate_hierarchy_access
+from app.models.user import User, UserRole
 
 from app.services.kpi_service import get_kpis_data
 from app.services.score_service import calculate_score
@@ -13,39 +15,54 @@ from app.services.feature_service import check_feature_access
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-
 @router.get("/")
 def get_dashboard(
     client_id: int = Query(...),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user: User = Depends(get_current_user)
 ):
-    # Segurança (multi-tenant)
-    validate_client_access(client_id, user, db)
+    """
+    Dashboard Centralizado com Proteção Multi-tenant Sênior.
+    """
+    
+    # 1. Lógica de Impersonation vs Restrição
+    # Se for CLIENTE, ele NUNCA pode ver outro ID além do dele.
+    target_client_id = client_id
+    
+    user_role = user.role.value if hasattr(user.role, "value") else user.role
+    
+    if user_role == UserRole.cliente or user_role == "cliente":
+        if user.client_id != client_id:
+            # Forçamos o ID correto do cliente caso ele tente burlar a URL
+            target_client_id = user.client_id
+    
+    # 2. Validação de Hierarquia (O bouncer do sistema)
+    # Admin entra em qualquer um, Gestor só nos dele, Cliente só no dele.
+    validate_hierarchy_access(target_client_id, user, db)
 
-    # KPIs
-    kpis = get_kpis_data(db, client_id, start_date, end_date)
-
+    # 3. Coleta de Dados (KPIs de Anúncios)
+    kpis = get_kpis_data(db, target_client_id, start_date, end_date)
     summary = kpis.get("summary", {})
     timeseries = kpis.get("timeseries", [])
 
-    # Insights estruturados
+    # 4. Inteligência Artificial / Insights
     insights = generate_insights(summary)
 
-    # Social
-    social_data = get_latest_social_metrics(db, client_id)
+    # 5. Métricas de Redes Sociais
+    social_data = get_latest_social_metrics(db, target_client_id)
 
-    # Feature: Score
-    score_enabled = check_feature_access(user.id, db, "score")
+    # 6. Feature Gating (Verifica se o plano permite o Score)
+    # Admins e Gestores costumam ter acesso total para demonstração
+    score_enabled = check_feature_access(user.id, db, "score") or user_role == "admin"
 
     score_data = None
     overview = None
 
     if score_enabled:
         score_result = calculate_score(summary)
-
+        
         score_data = {
             "value": score_result.get("score"),
             "level": score_result.get("level"),
@@ -58,15 +75,15 @@ def get_dashboard(
             "status": _get_status_label(score_result.get("level"))
         }
     else:
+        # Visão de Up-sell para quem não tem o plano
         score_data = {
             "available": False,
-            "message": "Upgrade your plan to access performance score"
+            "message": "Faça upgrade para o plano Pro para ver seu Score de Performance."
         }
-
         overview = {
             "score": None,
             "level": None,
-            "status": "locked"
+            "status": "bloqueado"
         }
 
     return {
@@ -80,19 +97,19 @@ def get_dashboard(
         "score": score_data,
         "features": {
             "score_enabled": score_enabled
-        }
+        },
+        "client_context_id": target_client_id # Para o front saber qual ID está sendo exibido
     }
-
 
 def _get_status_label(level: str | None):
     if not level:
-        return "unknown"
+        return "desconhecido"
 
     mapping = {
-        "excellent": "excellent",
-        "good": "improving",
-        "average": "stable",
-        "poor": "critical"
+        "excellent": "excelente",
+        "good": "em melhoria",
+        "average": "estável",
+        "poor": "crítico"
     }
 
-    return mapping.get(level, "unknown")
+    return mapping.get(level, "desconhecido")

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, Float, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 
@@ -14,3 +15,6 @@ class AdMetric(Base):
     spend = Column(Float, default=0.0)
 
     date = Column(Date)
+
+    # RELACIONAMENTO 
+    client = relationship("Client", back_populates="ad_metrics")
