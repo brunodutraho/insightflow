@@ -15,6 +15,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    last_login = Column(DateTime, nullable=True)
     
     # Usando o Enum definido acima
     role = Column(Enum(UserRole), default=UserRole.cliente, nullable=False)

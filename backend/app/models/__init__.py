@@ -5,3 +5,6 @@ from app.models.insight import Insight
 from app.models.ad_account import AdAccount
 from app.models.ad_metric import AdMetric
 from app.models.social_metric import SocialMetric
+from app.models.subscription import Subscription
+from app.models.plan import Plan
+from app.models.coupon import Coupon

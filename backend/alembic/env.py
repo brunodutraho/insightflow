@@ -8,7 +8,7 @@ from app.config.settings import settings
 
 # importa Base
 from app.database.base import Base
-from app.models import *  
+import app.models
 
 from app.models import user, client, ad_metric, insight, social_metric, subscription, marketing_metric, communication_metric
 

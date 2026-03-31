@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
+
 from app.database.base import Base
 
 
@@ -8,12 +10,16 @@ class Subscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    canceled_at = Column(DateTime, nullable=True)
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    plan = Column(String, default="free")
-    max_clients = Column(Integer, default=1)
+    plan_id = Column(Integer, ForeignKey("plans.id"))
 
     is_active = Column(Boolean, default=True)
 
-    # RELACIONAMENTO
+    # RELACIONAMENTOS
     user = relationship("User")
+    plan = relationship("Plan", back_populates="subscriptions")
