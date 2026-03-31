@@ -10,10 +10,11 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 # 🔐 USER LOGADO
 @router.get("/me")
-def get_me(user: dict = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user)):
     return {
-        "id": user["user_id"],
-        "role": user["role"]
+        "id": user.id,
+        "email": user.email,
+        "role": user.role
     }
 
 

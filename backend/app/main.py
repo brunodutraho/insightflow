@@ -21,6 +21,8 @@ from app.routers.kpi_routes import router as kpi_routes
 from app.routers.score_routes import router as score_routes
 from app.routers.dashboard_routes import router as dashboard_routes
 from app.routers.admin_routes import router as admin_router
+from app.auth import reauth
+from app.routers.subscription_routes import router as subscription_router
 
 
 from app.services.scheduler import start_scheduler
@@ -66,7 +68,8 @@ app.include_router(kpi_routes)
 app.include_router(score_routes)
 app.include_router(dashboard_routes)
 app.include_router(admin_router)
-
+app.include_router(reauth.router)
+app.include_router(subscription_router)
 
 @app.get("/")
 def root():
