@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 
 export default function AdminLayout({
@@ -8,11 +8,11 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // aplica tema ao carregar
+  // Aplica tema ao carregar
   useEffect(() => {
     const theme = localStorage.getItem("theme");
-
     if (theme === "light") {
       document.documentElement.classList.remove("dark");
     } else {
@@ -21,12 +21,21 @@ export default function AdminLayout({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white">
+    <div className="flex min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white transition-colors duration-300">
+      
+      {/* Passamos o estado para a Sidebar saber se deve sumir ou aparecer */}
+      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-      <Sidebar />
-
-      <main className="flex-1 p-8">
-        {children}
+      {/* O main agora reage ao estado da sidebar usando margin-left dinâmico */}
+      <main 
+        className={`
+          flex-1 transition-all duration-300 p-8 
+          ${sidebarOpen ? "ml-64" : "ml-0"}
+        `}
+      >
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
 
     </div>
