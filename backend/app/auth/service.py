@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User, UserRole
 from app.models.client import Client
 from app.models.user_profile import UserProfile
+from datetime import datetime
 
 from .utils import verify_password, create_access_token, hash_password
 
@@ -19,6 +20,9 @@ def login_user(db: Session, email: str, password: str):
     user = authenticate_user(db, email, password)
     if not user:
         return None
+
+    user.last_login = datetime.utcnow()
+    db.commit()
 
     role_value = user.role.value if hasattr(user.role, "value") else user.role
 
