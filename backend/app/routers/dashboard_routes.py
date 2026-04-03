@@ -23,38 +23,25 @@ def get_dashboard(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """
-    Dashboard Centralizado com Proteção Multi-tenant Sênior.
-    """
     
-    # 1. Lógica de Impersonation vs Restrição
-    # Se for CLIENTE, ele NUNCA pode ver outro ID além do dele.
     target_client_id = client_id
     
     user_role = user.role.value if hasattr(user.role, "value") else user.role
     
     if user_role == UserRole.cliente or user_role == "cliente":
-        if user.client_id != client_id:
-            # Forçamos o ID correto do cliente caso ele tente burlar a URL
-            target_client_id = user.client_id
+        if user.tenant_id != client_id:
+            target_client_id = user.tenant_id
     
-    # 2. Validação de Hierarquia (O bouncer do sistema)
-    # Admin entra em qualquer um, Gestor só nos dele, Cliente só no dele.
     validate_hierarchy_access(target_client_id, user, db)
 
-    # 3. Coleta de Dados (KPIs de Anúncios)
     kpis = get_kpis_data(db, target_client_id, start_date, end_date)
     summary = kpis.get("summary", {})
     timeseries = kpis.get("timeseries", [])
 
-    # 4. Inteligência Artificial / Insights
     insights = generate_insights(summary)
 
-    # 5. Métricas de Redes Sociais
     social_data = get_latest_social_metrics(db, target_client_id)
 
-    # 6. Feature Gating (Verifica se o plano permite o Score)
-    # Admins e Gestores costumam ter acesso total para demonstração
     score_enabled = check_feature_access(user.id, db, "score") or user_role == "admin"
 
     score_data = None

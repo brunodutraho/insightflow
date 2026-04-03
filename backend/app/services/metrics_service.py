@@ -1,15 +1,16 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from datetime import datetime, timedelta, timezone
 
 import calendar
 from app.models.subscription import Subscription
 from app.models.plan import Plan
 from app.models.user import User
-from app.models.client import Client
+from app.models.client import Tenant  # Renamed from Client
 from app.models.app_config import AppConfig
 from app.auth.utils import verify_password
 from app.models.activity import ActivityItem 
+from app.models.goal import GoalHistory
 
 
 # =========================================================
@@ -47,7 +48,7 @@ def get_users_growth_rate(db: Session):
 # =========================================================
 
 def get_total_companies(db: Session):
-    return db.query(Client).count()
+    return db.query(Tenant).count()
 
 
 # =========================================================
@@ -114,65 +115,55 @@ def get_mrr_growth(db: Session):
     return ((current - previous) / previous) * 100
 
 
+# ================================
+# GET - META + PACING (RITMO)
+# ================================
+
 def get_mrr_pacing(db: Session):
-    """
-    Lê a meta atualizada do banco e calcula o ritmo (pacing) do mês.
-    Essa função é usada pelo GET /admin/overview para mostrar a barra.
-    """
-    # 1. Busca o valor que você salvou usando a função update_mrr_goal
-    config = db.query(AppConfig).filter(AppConfig.key == "mrr_goal").first()
-    
-    # Se você ainda não salvou nada, ele assume 10000.0 como padrão
-    target = float(config.value) if config and config.value else 10000.0
-
-    # 2. Cálculo de Pacing (Ritmo do Calendário)
+    """ Fonte Única de Verdade: GoalHistory """
     now = datetime.now()
-    # Retorna o último dia do mês atual (ex: 30 ou 31)
-    _, total_days = calendar.monthrange(now.year, now.month)
-    current_day = now.day
 
-    # Calcula quanto % do mês já se passou até hoje
-    expected_progress = (current_day / total_days) * 100
+    # Busca a meta mais recente criada para este mês/ano
+    goal_record = db.query(GoalHistory).filter(
+        extract('month', GoalHistory.month_reference) == now.month,
+        extract('year', GoalHistory.month_reference) == now.year
+    ).order_by(GoalHistory.created_at.desc()).first()
+
+    target = goal_record.target_value if goal_record else 10000.0
+    
+    _, total_days = calendar.monthrange(now.year, now.month)
+    expected_progress = (now.day / total_days) * 100
 
     return {
-        "target": target,
+        "target": float(target),
         "expected_progress": round(expected_progress, 1)
     }
 
-
 def update_mrr_goal(db: Session, user: User, new_goal: float, password: str):
-    # 1. Valida a senha (IMPORTANTE: verify_password deve estar importado)
+    # 1. Valida Senha (Segurança)
     if not verify_password(password, user.hashed_password):
         raise Exception("Senha inválida")
 
-    # 2. Atualiza ou cria a meta no AppConfig
-    config = db.query(AppConfig).filter(AppConfig.key == "mrr_goal").first()
+    # 2. Cria o novo registro no Histórico (Versionamento)
+    now = datetime.now()
+    new_record = GoalHistory(
+        target_value=new_goal,
+        month_reference=now.replace(day=1), # Referência ao início do mês
+        created_at=now
+    )
+    db.add(new_record)
+    
+    # 3. Log de Atividade para a Timeline
+    log = ActivityItem(
+        type="configuracao",
+        message=f"Meta de MRR atualizada para R$ {new_goal:,.2f}",
+        created_at=now
+    )
+    db.add(log)
 
-    if not config:
-        config = AppConfig(key="mrr_goal", value=new_goal)
-        db.add(config)
-    else:
-        config.value = new_goal
+    db.commit()
+    return {"message": "Meta atualizada no histórico", "target": new_goal}
 
-    # 3. Registra a atividade para aparecer no componente de scroll (Timeline)
-    try:
-        nova_atividade = ActivityItem(
-            type="configuracao",
-            message=f"Meta de MRR alterada para R$ {new_goal:,.2f} por {user.email}",
-            created_at=datetime.utcnow()
-        )
-        db.add(nova_atividade)
-        
-        # Faz o commit de tudo (Meta + Atividade)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        print(f"Erro ao salvar atividade: {e}")
-        # Mesmo que a atividade falhe, a meta já estaria salva se fizéssemos separado, 
-        # mas aqui garantimos que ou salva os dois ou nenhum.
-        raise Exception("Erro ao persistir dados no banco")
-
-    return {"message": "Meta atualizada com sucesso"}
 
 
 
@@ -209,26 +200,65 @@ def get_churn_rate(db: Session):
 # MRR HISTORY (GRÁFICO)
 # =========================================================
 
+
 def get_mrr_history(db: Session):
     history = []
-    today = datetime.utcnow()
+    today = datetime.now()
 
+    # Buscamos os últimos 6 meses para o gráfico
     for i in range(5, -1, -1):
-        date = today - timedelta(days=i * 30)
-        month_name = date.strftime("%b")
+        # Calcula o primeiro dia do mês alvo no loop
+        # Subtraímos meses de forma segura
+        target_date = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+        month_label = target_date.strftime("%b")
 
-        mrr_value = db.query(func.sum(Plan.price))\
+        # 1. Busca o MRR Real (Baseado no que você já tinha)
+        mrr_real = db.query(func.sum(Plan.price))\
             .select_from(Subscription)\
             .join(Plan, Subscription.plan_id == Plan.id)\
             .filter(Subscription.is_active == True)\
             .scalar() or 0
 
+        # 2. Busca a meta registrada para este MÊS e ANO específicos
+        goal_record = db.query(GoalHistory)\
+            .filter(
+                extract('month', GoalHistory.month_reference) == target_date.month,
+                extract('year', GoalHistory.month_reference) == target_date.year
+            )\
+            .order_by(GoalHistory.created_at.desc())\
+            .first()
+            
+        # Fallback: Se não houver meta gravada para o mês passado, usa 10k
+        target_goal = goal_record.target_value if goal_record else 10000.0
+
         history.append({
-            "month": month_name,
-            "mrr": float(mrr_value)
+            "month": month_label,
+            "mrr": float(mrr_real),
+            "goal": target_goal # Cada ponto do gráfico agora tem sua própria meta "congelada"
         })
 
     return history
+
+def update_mrr_goal(db: Session, user, new_goal: float, password: str):
+    # ... (sua lógica de validação de senha aqui) ...
+
+    now = datetime.now()
+    month_ref = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Cria um novo registro de histórico em vez de apenas dar update
+    # Isso é o que garante a "memória" do gráfico
+    new_history = GoalHistory(
+        target_value=new_goal,
+        month_reference=month_ref,
+        updated_by=user.email
+    )
+    
+    db.add(new_history)
+    db.commit()
+    
+    # ... (lógica de salvar atividade na timeline) ...
+    return {"message": "Meta atualizada e registrada no histórico"}
+
 
 
 # =========================================================
@@ -239,10 +269,10 @@ def get_at_risk_clients(db: Session):
     now = datetime.utcnow()
     seven_days_ago = now - timedelta(days=7)
 
-    clients = db.query(Client).filter(
-        Client.last_activity_at != None,
-        Client.last_activity_at < seven_days_ago
-    ).order_by(Client.last_activity_at.asc()).limit(5).all()
+    clients = db.query(Tenant).filter(
+        Tenant.last_activity_at != None,
+        Tenant.last_activity_at < seven_days_ago
+    ).order_by(Tenant.last_activity_at.asc()).limit(5).all()
 
     at_risk = []
 
@@ -265,46 +295,34 @@ def get_at_risk_clients(db: Session):
 
 def get_recent_activity(db: Session):
     activities = []
-    now_utc = datetime.now(timezone.utc)
 
-    # 1. BUSCAR USUÁRIOS
-    users = db.query(User).order_by(User.created_at.desc()).limit(5).all()
-    for u in users:
-        # Se não tiver data no banco, usa 'now' para não sumir da lista
-        dt = u.created_at if u.created_at else now_utc
-        activities.append({
-            "id": f"user_{u.id}",
-            "message": f"Novo usuário: {u.email}",
-            "type": "user",
-            "created_at": dt
-        })
+    # Helper para formatar itens
+    def format_activity(id_prefix, obj, message, type_name, priority, date_field):
+        val = getattr(obj, date_field)
+        return {
+            "id": f"{id_prefix}_{obj.id}",
+            "message": message,
+            "type": type_name,
+            "priority": priority,
+            "created_at": val.replace(tzinfo=timezone.utc).isoformat() if val else None
+        }
 
-    # 2. BUSCAR ASSINATURAS (Aqui estão seus 3 registros!)
-    subs = db.query(Subscription).order_by(Subscription.created_at.desc()).limit(5).all()
-    for s in subs:
-        dt = s.created_at if s.created_at else now_utc
-        activities.append({
-            "id": f"sub_{s.id}",
-            "message": "Nova assinatura confirmada",
-            "type": "money",
-            "created_at": dt
-        })
+    # Queries otimizadas com limit
+    new_users = db.query(User).order_by(User.created_at.desc()).limit(5).all()
+    new_subs = db.query(Subscription).filter(Subscription.canceled_at == None).order_by(Subscription.created_at.desc()).limit(5).all()
+    churn = db.query(Subscription).filter(Subscription.canceled_at != None).order_by(Subscription.canceled_at.desc()).limit(5).all()
 
-    # 3. ORDENAÇÃO SEGURA (Garante que os mais novos fiquem no topo)
-    activities.sort(
-        key=lambda x: x["created_at"].replace(tzinfo=timezone.utc) if x["created_at"].tzinfo is None else x["created_at"],
-        reverse=True
-    )
+    for u in new_users:
+        activities.append(format_activity("user", u, f"Novo cadastro: {u.email}", "user", "low", "created_at"))
+        
+    for s in new_subs:
+        activities.append(format_activity("sub", s, "Nova assinatura Pro", "money", "medium", "created_at"))
 
-    # 4. CONVERSÃO PARA STRING (O que o Frontend entende)
-    for act in activities:
-        dt = act["created_at"]
-        if isinstance(dt, datetime):
-            # Garante que o 'Z' (UTC) vá na string para o JS entender a hora
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            act["created_at"] = dt.isoformat()
+    for c in churn:
+        activities.append(format_activity("churn", c, "Assinatura cancelada", "alert", "high", "canceled_at"))
 
+    # Ordenação única e slice final
+    activities.sort(key=lambda x: x["created_at"] or "", reverse=True)
     return activities[:10]
 
 
@@ -370,3 +388,85 @@ def get_detailed_activity(db: Session):
         "sessions": sessions_log
     }
 
+def get_trial_to_paid_funnel(db: Session):
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow()
+    thirty_days_ago = now - timedelta(days=30)
+
+    # usuários criados (trial)
+    trials = db.query(User).filter(
+        User.created_at >= thirty_days_ago
+    ).count()
+
+    # assinaturas criadas
+    conversions = db.query(Subscription).filter(
+        Subscription.created_at >= thirty_days_ago
+    ).count()
+
+    # taxa
+    rate = (conversions / trials) * 100 if trials > 0 else 0
+
+    return {
+        "trials": trials,
+        "conversions": conversions,
+        "conversion_rate": rate
+    }
+
+    
+def get_smart_insights(db: Session):
+    insights = []
+
+    # métricas base
+    mrr = get_mrr(db)
+    churn = get_churn_rate(db)
+    growth = get_users_growth_rate(db)
+    conversion_data = get_trial_to_paid_funnel(db)
+    conversion = conversion_data["conversion_rate"]
+
+    # =========================
+    # REGRAS INTELIGENTES
+    # =========================
+
+    # 🚨 churn alto
+    if churn > 5:
+        insights.append({
+            "type": "danger",
+            "message": "Churn alto detectado — clientes estão cancelando rápido"
+        })
+
+    # ⚠️ conversão baixa
+    if conversion < 5:
+        insights.append({
+            "type": "warning",
+            "message": "Baixa conversão de trial → pago — revise onboarding ou oferta"
+        })
+
+    # ⚠️ crescimento sem receita
+    if growth > 10 and mrr == 0:
+        insights.append({
+            "type": "warning",
+            "message": "Usuários estão crescendo mas não geram receita"
+        })
+
+    # 🟢 saudável
+    if churn < 3 and conversion > 10:
+        insights.append({
+            "type": "success",
+            "message": "Produto saudável: boa retenção e conversão"
+        })
+
+    # fallback
+    if not insights:
+        insights.append({
+            "type": "info",
+            "message": "Dados insuficientes para análise avançada"
+        })
+
+    return insights
+
+def log_admin_action(db, admin_id, target_id, action):
+    from app.models.admin_log import AdminLog
+    log = AdminLog(admin_id=admin_id, target_user_id=target_id, action=action)
+    db.add(log)
+    # O commit é feito na rota
