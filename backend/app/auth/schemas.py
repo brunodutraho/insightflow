@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from uuid import UUID
 
 
 # 🔐 LOGIN
@@ -15,32 +16,38 @@ class TokenResponse(BaseModel):
 
 # 🚀 REGISTER (ONBOARDING COMPLETO)
 class RegisterRequest(BaseModel):
-    name: str
+    full_name: str
     email: EmailStr
     password: str
 
     phone: Optional[str] = None
     country: Optional[str] = None
     state: Optional[str] = None
-    agency_name: Optional[str] = None
-    company_size: Optional[str] = None
-    source: Optional[str] = None
+    company_name: Optional[str] = None
+    team_size: Optional[int] = None
+    how_heard: Optional[str] = None
+    terms_accepted: bool = False
 
 
 # 👤 RESPONSE
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     email: EmailStr
     role: str
-    client_id: Optional[int] = None
-    manager_id: Optional[int] = None
+    tenant_id: Optional[UUID] = None
+    manager_id: Optional[UUID] = None
+    full_name: Optional[str] = None
+    status: str
+    email_verified: bool
 
     class Config:
         from_attributes = True
 
 
-# 👥 GESTOR CRIANDO CLIENTE
 class ClientUserCreate(BaseModel):
     email: EmailStr
-    password: str
-    client_id: int
+    tenant_id: UUID
+
+class RegisterResponse(BaseModel):
+    user: UserResponse
+    message: str
