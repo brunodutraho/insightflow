@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
@@ -24,9 +26,11 @@ from app.routers.admin_routes import router as admin_router
 from app.auth import reauth
 from app.routers.subscription_routes import router as subscription_router
 
-
 from app.services.scheduler import start_scheduler
 
+#(OBRIGATÓRIO PARA OAUTH)
+from starlette.middleware.sessions import SessionMiddleware
+from app.config.settings import settings
 
 # logging
 setup_logging()
@@ -35,18 +39,30 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    start_scheduler() 
+    start_scheduler()
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 
 
-# Middlewares
+# =========================
+# MIDDLEWARES (ORDEM IMPORTA)
+# =========================
+
+# 1. Session (ANTES DE TUDO que usa request)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY
+)
+
+# 2. Error
 app.add_middleware(ErrorMiddleware)
+
+# 3. Logging
 app.add_middleware(LoggingMiddleware)
 
-# CORS
+# 4. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -56,7 +72,10 @@ app.add_middleware(
 )
 
 
-# Routers
+# =========================
+# ROUTERS
+# =========================
+
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(health_router)
@@ -70,6 +89,10 @@ app.include_router(dashboard_routes)
 app.include_router(admin_router)
 app.include_router(reauth.router)
 app.include_router(subscription_router)
+
+# =========================
+# ROOT
+# =========================
 
 @app.get("/")
 def root():
