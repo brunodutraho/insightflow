@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.models.insight import Insight
-from app.models.client import Client
+from app.models.client import Tenant
 from app.schemas.insight_schema import InsightCreate, InsightResponse
 from app.auth.dependencies import get_current_user
 
@@ -14,16 +14,15 @@ router = APIRouter(prefix="/insights", tags=["Insights"])
 @router.post("/", response_model=InsightResponse)
 def create_insight(
     insight_data: InsightCreate,
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    # valida se o cliente pertence ao gestor
     client = (
-        db.query(Client)
+        db.query(Tenant)
         .filter(
-            Client.id == client_id,
-            Client.owner_id == current_user.id
+            Tenant.id == client_id,
+            Tenant.owner_id == current_user.id
         )
         .first()
     )
@@ -48,19 +47,18 @@ def create_insight(
 # LIST INSIGHTS (com paginação + filtros + segurança)
 @router.get("/", response_model=list[InsightResponse])
 def list_insights(
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     limit: int = Query(10, le=100),
     offset: int = Query(0, ge=0),
     category: str | None = Query(None, max_length=50),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    # valida se o cliente pertence ao gestor
     client = (
-        db.query(Client)
+        db.query(Tenant)
         .filter(
-            Client.id == client_id,
-            Client.owner_id == current_user.id
+            Tenant.id == client_id,
+            Tenant.owner_id == current_user.id
         )
         .first()
     )
@@ -69,7 +67,7 @@ def list_insights(
         raise HTTPException(status_code=403, detail="Invalid client")
 
     query = db.query(Insight).filter(
-        Insight.client_id == client_id
+        Insight.tenant_id == client_id
     )
 
     # filtro opcional por categoria

@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from app.database.database import get_db
 from app.models.ad_metric import AdMetric
-from app.models.client import Client
+from app.models.client import Tenant
 from app.schemas.kpi_schema import KPIResponse, KPIInsightResponse
 from app.auth.dependencies import get_current_user
 from app.services.insight_service import generate_insights
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/kpis", tags=["KPIs"])
 # 🔐 MULTI-TENANT SECURITY
 # ==============================
 def validate_client_access(db: Session, client_id: int, user):
-    client = db.query(Client).filter(Client.id == client_id).first()
+    client = db.query(Tenant).filter(Tenant.id == client_id).first()
 
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -102,7 +102,7 @@ def generate_insights(change: dict) -> list[str]:
 # ==============================
 @router.get("/", response_model=KPIResponse)
 def get_kpis(
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
@@ -111,7 +111,7 @@ def get_kpis(
     validate_client_access(db, client_id, current_user)
 
     query = db.query(AdMetric).filter(
-        AdMetric.client_id == client_id
+        AdMetric.tenant_id == client_id
     )
 
     if start_date:
@@ -178,7 +178,7 @@ def get_kpis(
 # ==============================
 @router.get("/compare", response_model=KPIInsightResponse)
 def compare_kpis(
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     start_date: date = Query(...),
     end_date: date = Query(...),
     db: Session = Depends(get_db),
@@ -199,7 +199,7 @@ def compare_kpis(
                 func.sum(AdMetric.spend).label("spend"),
             )
             .filter(
-                AdMetric.client_id == client_id,
+                AdMetric.tenant_id == client_id,
                 AdMetric.date >= start,
                 AdMetric.date <= end
             )

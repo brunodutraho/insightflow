@@ -1,5 +1,7 @@
+import tailwindAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   darkMode: "class",
 
   content: [
@@ -11,6 +13,11 @@ module.exports = {
 
   theme: {
     extend: {
+      fontFamily: {
+        // Vinculando às variáveis de fonte definidas no RootLayout
+        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui'],
+        roboto: ['var(--font-roboto)', 'sans-serif'],
+      },
       colors: {
         brand: {
           dark: '#0B1020',
@@ -28,5 +35,7 @@ module.exports = {
     },
   },
 
-  plugins: [],
+  plugins: [tailwindAnimate],
 };
+
+export default config;

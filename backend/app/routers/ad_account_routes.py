@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.models.ad_account import AdAccount
-from app.models.client import Client
+from app.models.client import Tenant
 from app.schemas.ad_account import AdAccountCreate, AdAccountResponse
 from app.auth.dependencies import get_current_user
 
@@ -20,10 +20,10 @@ def create_ad_account(
     user_id = int(current_user["user_id"])
 
     client = (
-        db.query(Client)
+        db.query(Tenant)
         .filter(
-            Client.id == data.client_id,
-            Client.owner_id == user_id
+            Tenant.id == data.client_id,
+            Tenant.owner_id == user_id
         )
         .first()
     )
@@ -51,7 +51,7 @@ def list_ad_accounts(
     
     return (
         db.query(AdAccount)
-        .join(Client)
-        .filter(Client.owner_id == user_id)
+        .join(Tenant)
+        .filter(Tenant.owner_id == user_id)
         .all()
     )

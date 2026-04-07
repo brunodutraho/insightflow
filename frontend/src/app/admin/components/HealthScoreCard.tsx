@@ -1,4 +1,3 @@
-// src/app/admin/components/HealthScoreCard.tsx
 import { HealthResult } from "../lib/healthScore";
 
 export function HealthScoreCard({ health }: { health: HealthResult }) {
@@ -10,7 +9,7 @@ export function HealthScoreCard({ health }: { health: HealthResult }) {
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-xs uppercase tracking-[0.2em] font-black opacity-80 mb-2">
-            SaaS Health Score
+            Pontuação de Saúde
           </h2>
           <div className="flex items-baseline gap-2">
             <p className="text-6xl font-black tracking-tighter">

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.models.user import User
-from app.models.client import Client
+from app.models.client import Tenant
 from app.models.subscription import Subscription
 
 
@@ -24,7 +24,7 @@ def get_admin_overview(db: Session):
     # =========================
     # COMPANIES
     # =========================
-    total_companies = db.query(func.count(Client.id)).scalar()
+    total_companies = db.query(func.count(Tenant.id)).scalar()
 
     # =========================
     # SUBSCRIPTIONS

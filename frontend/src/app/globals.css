@@ -2,8 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* opcional - melhora base visual */
-html, body {
-  padding: 0;
-  margin: 0;
+@layer base {
+  html {
+    /* Define a Inter como padrão global */
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-white text-slate-900 dark:bg-brand-dark dark:text-brand-text;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Padronização da Scrollbar do Navegador */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100 dark:bg-brand-dark;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-brand-border rounded-full border-2 border-transparent bg-clip-content;
+    transition: all 0.3s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    /* Quando passa o mouse, destaca com a cor primária do CRM */
+    @apply bg-brand-primary;
+  }
+}
+
+/* Scrollbar Customizada para elementos internos (ex: Sidebar, Timeline) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 dark:bg-brand-border rounded-full;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  @apply bg-brand-primary/50;
+}
+
+/* Ajuste de seleção de texto para combinar com o CRM */
+::selection {
+  @apply bg-brand-primary/30 text-brand-primary;
 }

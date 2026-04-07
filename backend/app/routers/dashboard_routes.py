@@ -1,4 +1,3 @@
-# backend/app/routers/dashboard_routes.py
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
@@ -11,7 +10,8 @@ from app.services.kpi_service import get_kpis_data
 from app.services.score_service import calculate_score
 from app.services.insight_service import generate_insights
 from app.services.social_service import get_latest_social_metrics
-from app.services.feature_service import check_feature_access
+from app.services.plan_service import has_feature
+from app.auth.dependencies import require_access
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -21,14 +21,20 @@ def get_dashboard(
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_access([
+        UserRole.admin_master,
+        UserRole.gerente,
+        UserRole.gestor_interno,
+        UserRole.gestor_assinante,
+        UserRole.cliente_final
+    ]))
 ):
     
     target_client_id = client_id
     
     user_role = user.role.value if hasattr(user.role, "value") else user.role
     
-    if user_role == UserRole.cliente or user_role == "cliente":
+    if user_role == UserRole.cliente_final or user_role == "cliente_final":
         if user.tenant_id != client_id:
             target_client_id = user.tenant_id
     
@@ -42,7 +48,7 @@ def get_dashboard(
 
     social_data = get_latest_social_metrics(db, target_client_id)
 
-    score_enabled = check_feature_access(user.id, db, "score") or user_role == "admin"
+    score_enabled = has_feature(db, user.tenant_id, "score") or user_role == "admin"
 
     score_data = None
     overview = None

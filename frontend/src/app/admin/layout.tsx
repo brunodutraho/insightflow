@@ -23,17 +23,17 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white transition-colors duration-300">
       
-      {/* Passamos o estado para a Sidebar saber se deve sumir ou aparecer */}
+      {/* Sidebar: Ela tem largura fixa (w-64 ou w-20) e empurra o conteúdo naturalmente */}
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-      {/* O main agora reage ao estado da sidebar usando margin-left dinâmico */}
-      <main 
-        className={`
-          flex-1 transition-all duration-300 p-8 
-          ${sidebarOpen ? "ml-64" : "ml-0"}
-        `}
-      >
-        <div className="max-w-7xl mx-auto">
+      {/* 
+          Main: 
+          1. flex-1 faz ele ocupar todo o espaço restante.
+          2. min-w-0 evita que gráficos ou tabelas quebrem o layout (overflow).
+          3. Removidos os ml-0 e mr-1 que causavam o desalinhamento.
+      */}
+      <main className="flex-1 min-w-0 transition-all duration-300">
+        <div className="p-8 max-w-[1600px] mx-auto">
           {children}
         </div>
       </main>

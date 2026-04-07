@@ -5,7 +5,7 @@ from datetime import date
 
 from app.database.database import get_db
 from app.models.ad_metric import AdMetric
-from app.models.client import Client
+from app.models.client import Tenant
 from app.auth.dependencies import get_current_user
 from app.services.score_service import calculate_score
 from app.schemas.score_schema import PerformanceScoreResponse
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/score", tags=["Performance Score"])
 
 
 def validate_client_access(db: Session, client_id: int, user):
-    client = db.query(Client).filter(Client.id == client_id).first()
+    client = db.query(Tenant).filter(Tenant.id == client_id).first()
 
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -27,7 +27,7 @@ def validate_client_access(db: Session, client_id: int, user):
 
 @router.get("/", response_model=PerformanceScoreResponse)
 def get_score(
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
@@ -39,7 +39,7 @@ def get_score(
         func.sum(AdMetric.impressions).label("impressions"),
         func.sum(AdMetric.clicks).label("clicks"),
         func.sum(AdMetric.spend).label("spend"),
-    ).filter(AdMetric.client_id == client_id)
+    ).filter(AdMetric.tenant_id == client_id)
 
     if start_date:
         query = query.filter(AdMetric.date >= start_date)

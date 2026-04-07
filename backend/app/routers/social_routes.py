@@ -5,7 +5,7 @@ from datetime import date
 
 from app.database.database import get_db
 from app.models.social_metric import SocialMetric
-from app.models.client import Client
+from app.models.client import Tenant
 from app.schemas.social_schema import SocialResponse
 from app.auth.dependencies import get_current_user
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/social", tags=["Social Media"])
 
 
 def validate_client_access(db, client_id, user):
-    client = db.query(Client).filter(Client.id == client_id).first()
+    client = db.query(Tenant).filter(Tenant.id == client_id).first()
 
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -24,7 +24,7 @@ def validate_client_access(db, client_id, user):
 
 @router.get("/", response_model=SocialResponse)
 def get_social_metrics(
-    client_id: int = Query(...),
+    client_id: str = Query(...),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
@@ -33,7 +33,7 @@ def get_social_metrics(
     validate_client_access(db, client_id, current_user)
 
     query = db.query(SocialMetric).filter(
-        SocialMetric.client_id == client_id
+        SocialMetric.tenant_id == client_id
     )
 
     if start_date:
