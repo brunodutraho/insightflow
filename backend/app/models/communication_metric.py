@@ -1,14 +1,16 @@
+import uuid
 from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.database.base import Base
 
 
 class CommunicationMetric(Base):
     __tablename__ = "communication_metrics"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
 
     channel = Column(String)  # email, whatsapp
 
@@ -19,4 +21,4 @@ class CommunicationMetric(Base):
     date = Column(Date)
 
     # RELACIONAMENTO SÊNIOR
-    client = relationship("Client")
+    tenant = relationship("Tenant", back_populates="communication_metrics")

@@ -10,7 +10,7 @@ from app.config.settings import settings
 from app.database.base import Base
 import app.models
 
-from app.models import user, client, ad_metric, insight, social_metric, subscription, marketing_metric, communication_metric
+from app.models import user, client, ad_metric, insight, social_metric, subscription, marketing_metric, communication_metric, permission, invite_token, audit_log
 
 # caso já tenha criado
 # from app.models import social_metric

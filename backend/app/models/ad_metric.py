@@ -1,14 +1,16 @@
+import uuid
 from sqlalchemy import Column, Integer, Float, Date, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.database.base import Base
 
 
 class AdMetric(Base):
     __tablename__ = "ad_metrics"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
 
     impressions = Column(Integer, default=0)
     clicks = Column(Integer, default=0)
@@ -16,5 +18,5 @@ class AdMetric(Base):
 
     date = Column(Date)
 
-    # RELACIONAMENTO 
-    client = relationship("Client", back_populates="ad_metrics")
+    # RELACIONAMENTO
+    tenant = relationship("Tenant", back_populates="ad_metrics")
